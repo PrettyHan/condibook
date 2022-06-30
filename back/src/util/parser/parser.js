@@ -1,26 +1,16 @@
 import { parser } from "url-meta-scraper";
-import { XMLHttpRequest } from "xmlhttprequest";
 
 async function parsers(url) {
-    let title = null;
-    let description = null;
-    let img = null;
-
-    const urlMetaScraperResponse = await getDataUsingUrlMetaScraper({ url });
+    const urlMetaScraperResponse = getDataUsingUrlMetaScraper({ url });
 
     //title, description 둘 중에 아무것도 없다면 <title> 파싱
     if (urlMetaScraperResponse) {
         return { ...urlMetaScraperResponse };
     }
 
-    const parseTitleTagResponse = await getDataParseTitleTag({ url });
+    const parseTitleTagResponse = getDataParseTitleTag({ url });
 
-    if (parseTitleTagResponse) {
-        console.log(parseTitleTagResponse);
-        return { title: parseTitleTagResponse.title, description, img };
-    }
-
-    return { title, description, img };
+    return { ...parseTitleTagResponse };
 }
 
 async function getDataUsingUrlMetaScraper({ url }) {
@@ -45,38 +35,18 @@ async function getDataUsingUrlMetaScraper({ url }) {
 
         return { title, description, img };
     } catch (e) {
-        console.log(`parser는 이 사이트 ${url}는 파싱할 수 없습니다`);
+        console.log(`이 사이트 ${url}는 파싱할 수 없습니다`);
         return null;
     }
 }
 
 async function getDataParseTitleTag({ url }) {
-    let title = null;
     try {
-        const xhr = new XMLHttpRequest();
+        const res = await fetch("http://example.com/");
 
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === xhr.DONE) {
-                if (xhr.status == 200 || xhr.status == 201) {
-                    // 요청이 정상적으로 처리 된 경우
-                    console.log("responseText", xhr.responseText);
-                    // title = xhr.responseText
-                    //     .split("<title>")[1]
-                    //     .split("</title>")[0];
-                } else {
-                    throw new Error(
-                        `XMLHttpRequest는 이 사이트 ${url}는 파싱할 수 없습니다`,
-                    );
-                }
-            }
-        };
-        xhr.open("get", url, true);
-        // xhr.setRequestHeader("Content-Type", "multipart/form-data");
-        xhr.send();
-
-        return { title };
+        return { title: res.text().split("<title>")[1].split("</title>")[0] };
     } catch (e) {
-        console.log(e);
+        console.log(`이 사이트 ${url}는 파싱할 수 없습니다`);
         return null;
     }
 }
