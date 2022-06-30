@@ -45,6 +45,12 @@ export default function PostSchema(sequelize, DataTypes) {
                     unique: true,
                     fields: ["id"],
                 },
+                {
+                    type: "FULLTEXT",
+                    name: "post_idx",
+                    fields: ["title", "content"],
+                    parser: "ngram",
+                },
             ],
         },
     );
