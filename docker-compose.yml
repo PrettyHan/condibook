@@ -1,7 +1,7 @@
 version: "3"
 services:
   frontend_server:
-    image: hyeeeeejin/condibook-front:0.0.1
+    image: hyeeeeejin/condibook-front:0.0.5
     restart: "on-failure"
     ports:
       - 80:80
@@ -9,10 +9,18 @@ services:
       - condibook
 
   backend_server:
-    image: hyeeeeejin/condibook-back:0.0.1
+    image: hyeeeeejin/condibook-back:0.0.5
     restart: "on-failure"
     ports:
       - 5001:5001
+    networks:
+      - condibook
+
+  ai_server:
+    image: hyeeeeejin/condibook-ai:0.0.5
+    restart: "on-failure"
+    ports:
+      - :5004
     networks:
       - condibook
 

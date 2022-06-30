@@ -1,5 +1,5 @@
 import re
-from googletrans import Translator,LANGUAGES
+from googletrans import Translator, LANGUAGES
 from konlpy.tag import Okt
 from gensim.models import Word2Vec
 import os
@@ -10,7 +10,7 @@ translator = Translator()
 okt = Okt()
 # print(os.listdir('.')) # 작동하는 곳의 현 위치를 나타냄.
 # model = Word2Vec.load('./AI/Model/pretrained/ko.bin')
-model = Word2Vec.load('../model/train1_ko.bin') # 새로운 경로 지정.
+model = Word2Vec.load('./model/last_ko2.bin')  # 새로운 경로 지정.
 model_input_words = tuple(model.wv.index2word)
 
 del_arr = '''
@@ -59,37 +59,39 @@ del del_arr
 # 키워드 추천을 위한 두 개의 함수.
 # model1 : nouns_extract func.
 def nouns_extractor(arr):
-    #arr이 ''인 경우.. title은 거의 대부분 있을 수 밖에 없고,description이 없는 경우를 가정할 수 있기 때문.
+    # arr이 ''인 경우.. title은 거의 대부분 있을 수 밖에 없고,description이 없는 경우를 가정할 수 있기 때문.
     if len(arr) == 0:
         return arr
-    
+
     reserverd_nouns = []
     text = ''
-    
-    #명사는 넣고, 영어는 재분류를 위해 빼기.
+
+    # 명사는 넣고, 영어는 재분류를 위해 빼기.
     for i in okt.pos(arr):
         if i[1] == 'Noun' and i[0] not in stopwords:
             reserverd_nouns.append(i[0])
         elif i[1] == 'Alpha':
             text = text + i[0]+' '
-    
+
     # 영어가 있는 경우 실행되는 코드로 위와 똑같이 명사 분류.
     text1 = ''
     if len(text) != 0:
-        text1 = translator.translate(text, dest = 'ko').text
+        text1 = translator.translate(text, dest='ko').text
 
         for i in okt.pos(text1):
             if i[1] == 'Noun' and i[0] not in stopwords and len(i[0]) != 1:
                 reserverd_nouns.append(i[0])
-    
-    #불용어 제거 후 return.(중복 가능)
+
+    # 불용어 제거 후 return.(중복 가능)
     # nouns = [i for i in reserverd_nouns if i not in stopwords] 요게 함수쪽으로 들어갈 경우 len(title_nouns) == 0 이 될 수 있음.
     # print('noun_extractor.reserverd_nouns =',reserverd_nouns)
     return reserverd_nouns
 
 # model2 : 예비북마크 list.
+
+
 def make_reserved_bookmark_list(lst):
-    reserved_bookmark_list = [(i,1) for i in lst]
+    reserved_bookmark_list = [(i, 1) for i in lst]
     exist_words = []
 
     for i in lst:
@@ -97,47 +99,55 @@ def make_reserved_bookmark_list(lst):
             exist_words.append(i)
 
     if len(exist_words) > 0:
-        reserved_bookmark_list += model.wv.most_similar(positive = exist_words)
-    
+        reserved_bookmark_list += model.wv.most_similar(positive=exist_words)
+
     return reserved_bookmark_list
 
 # model3 : bookmark_extract func.
 
-def keywords_sum_similarity(reserved_bookmark_list,description_nouns):
+
+def keywords_sum_similarity(reserved_bookmark_list, description_nouns):
     # description이 없는 경우.. title의 keyword는 있겠지..
     if len(description_nouns) == 0:
-        return False, {i[0]:i[1] for i in reserved_bookmark_list}
-    
+        return False, {i[0]: i[1] for i in reserved_bookmark_list}
+
     # keyword_similarity_sum 구하고 return.
     keywords_ordered = dict()
     # print(len(reserved_bookmark_list),len(description_nouns))
-    on_description_nouns = [i for i in description_nouns if i in model_input_words]
-    
+    on_description_nouns = [
+        i for i in description_nouns if i in model_input_words]
+
     for i in range(len(reserved_bookmark_list)):
-        keyword,per = reserved_bookmark_list[i]
-        
+        keyword, per = reserved_bookmark_list[i]
+
         if keyword in model_input_words:
             # print(reserved_bookmark_list)
             temp_num = 1
-            
+
             try:
-                temp_num += model.wv.n_similarity([keyword],on_description_nouns)
+                temp_num += model.wv.n_similarity([keyword],
+                                                  on_description_nouns)
             except:
                 pass  # description의 noun이 model에 없는 경우 고려대상에서 제외.
-                
+
             # print(temp_num,per)
             temp_num *= per
-            
+
             keywords_ordered[keyword] = temp_num
         else:
-            keywords_ordered['!'+keyword] = -1 # title에서 뽑은 noun이 없는 경우. 경고(!)와 함께 value = -1로 표기.
-    
+            # title에서 뽑은 noun이 없는 경우. 경고(!)와 함께 value = -1로 표기.
+            keywords_ordered['!'+keyword] = -1
+
     return True, keywords_ordered
 
+
 def get_category(hashtags):
-    categories = [('경영'), ('정보', '기술'), ('금융'), ('개발'), ('구인', '구직'), ('건강'), ('환경'), ('뷰티'), ('여행'), ('식당', '카페'), ('자기','공부'),('음식', '요리')]
-    cate_dic = {'경영': '경영', ('정보', '기술'): '정보/기술', '금융': '금융', '개발': '개발', ('구인', '구직'): '구인/구직', '건강': '건강', '환경': '환경', '뷰티': '뷰티', '여행': '여행', ('식당', '카페'): '맛집/카페', ('자기', '공부'): '자기계발', ('음식', '요리'): '음식/요리'}
-    category_list = ['경영', '정보', '기술', '금융', '개발', '구인', '구직', '건강', '환경', '뷰티', '여행', '식당', '카페', '자기','공부','음식', '요리']
+    categories = [('경영'), ('정보', '기술'), ('금융'), ('개발'), ('구인', '구직'), ('건강'),
+                  ('환경'), ('뷰티'), ('여행'), ('식당', '카페'), ('자기', '공부'), ('음식', '요리')]
+    cate_dic = {'경영': '경영', ('정보', '기술'): '정보/기술', '금융': '금융', '개발': '개발', ('구인', '구직'): '구인/구직', '건강': '건강',
+                '환경': '환경', '뷰티': '뷰티', '여행': '여행', ('식당', '카페'): '맛집/카페', ('자기', '공부'): '자기계발', ('음식', '요리'): '음식/요리'}
+    category_list = ['경영', '정보', '기술', '금융', '개발', '구인', '구직',
+                     '건강', '환경', '뷰티', '여행', '식당', '카페', '자기', '공부', '음식', '요리']
     # it --> 정보, (인크루트) --> del, 맛집 --> 식당, 자기개발 --> 자기 + 공부 로 변경.
 
     for i in hashtags:
@@ -149,17 +159,17 @@ def get_category(hashtags):
     weights = [0]*len(categories)
 
     for i in range(len(categories)):
-        weights[i] = model.wv.n_similarity(categories[i],hashtags)
+        weights[i] = model.wv.n_similarity(categories[i], hashtags)
 
     # if max(weights) < 0.55:
     #     return 'etc'
     # ! max 값에 대한 조정이 필요함. 0.55는 API에 있는 것을 넣어 확인 후 임의로 조정한 것임.. 제거.
     # ! 최댓값 : 0.53~~
     # print(weights)
-    
+
     return cate_dic[categories[weights.index(max(weights))]]
 
-# dict 상위 3개의 value 
+# dict 상위 3개의 value
 
 # ================================================
 
@@ -169,13 +179,14 @@ def get_category(hashtags):
 
 # 지금까지 모든 사용자가 북마크하면서 등록된 헤시태그들....  : hashtag_list
 
+
 def recommend_from_hashtag(hashtags):
 
     # 요리, 경제, 자전거
     # ['a','b','c','d','e'... ~~ 'z']
 
-    #관심사 키워드 + bookmark된 키워드 리스트의 목록중 받아온 북마크에 있는 것만 뽑아주기. -- be가 어떻게 짜여졌냐에 따라 수정해야 할 수도?
-    x = model.wv.most_similar(positive = hashtags) # len = 30  --> 바꾸기.
+    # 관심사 키워드 + bookmark된 키워드 리스트의 목록중 받아온 북마크에 있는 것만 뽑아주기. -- be가 어떻게 짜여졌냐에 따라 수정해야 할 수도?
+    x = model.wv.most_similar(positive=hashtags)  # len = 30  --> 바꾸기.
     temp = []
     for i in x:
         temp.append(i[0])
@@ -184,11 +195,12 @@ def recommend_from_hashtag(hashtags):
 
     return hashtags + temp
 
+
 def word_detection(arr):
     x = translator.detect(arr).lang.lower()
     if x in LANGUAGES:
         return LANGUAGES[x]
-    
+
     return x  # module 내의 constant 단위까지 가서 살펴보았고, if 문은 혹시나 싶어서 넣어둠.
 
 # 뽑아낸 것... short name 보내기?
