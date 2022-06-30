@@ -84,8 +84,8 @@ const CommunityPage = () => {
               </ButtonGroup>
             </Container>
           </Row>
-          <Row className="second">
-            <Container>
+          <Row className="second" style={{ width: "90%" }}>
+            <Container style={{ width: "100%" }}>
               <CommunityPostList sortState={sortState} />
             </Container>
           </Row>
@@ -115,7 +115,7 @@ const Div = styled.div`
   }
 
   .first {
-    width: 100%;
+    width: 90%;
   }
 
   .second {
