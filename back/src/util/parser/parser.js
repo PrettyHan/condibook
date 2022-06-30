@@ -1,5 +1,5 @@
-import axios from "axios";
 import { parser } from "url-meta-scraper";
+import { XMLHttpRequest } from "xmlhttprequest";
 
 async function parsers(url) {
     let title = null;
@@ -53,15 +53,30 @@ async function getDataUsingUrlMetaScraper({ url }) {
 async function getDataParseTitleTag({ url }) {
     let title = null;
     try {
-        await axios.get(url).then((res) => {
-            const result = res;
-            console.log(result);
-            title = result.split("<title>")[1].split("</title>")[0];
-        });
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === xhr.DONE) {
+                if (xhr.status == 200 || xhr.status == 201) {
+                    // 요청이 정상적으로 처리 된 경우
+                    console.log("responseText", xhr.responseText);
+                    // title = xhr.responseText
+                    //     .split("<title>")[1]
+                    //     .split("</title>")[0];
+                } else {
+                    throw new Error(
+                        `XMLHttpRequest는 이 사이트 ${url}는 파싱할 수 없습니다`,
+                    );
+                }
+            }
+        };
+        xhr.open("get", url, true);
+        // xhr.setRequestHeader("Content-Type", "multipart/form-data");
+        xhr.send();
 
         return { title };
     } catch (e) {
-        console.log(`이 사이트 ${url}는 파싱할 수 없습니다`, e.response.data);
+        console.log(e);
         return null;
     }
 }
