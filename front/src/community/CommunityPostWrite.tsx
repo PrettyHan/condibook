@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import S3 from "react-aws-s3-typescript";
 import { v4 as uuidv4 } from "uuid";
 import styled from "styled-components";
+import { AxiosError } from "axios";
 
 import { Editor as ToastEditor } from "@toast-ui/react-editor";
 import "@toast-ui/editor/dist/toastui-editor.css";
@@ -28,6 +29,8 @@ const CommunityPostWrite = () => {
   const params = new URLSearchParams(location.search); // 쿼리 스트링 변환
   const postId = params.get("id"); // 변환된 게시글 아이디 값
   const editorRef = React.useRef<ToastEditor>(null);
+  const user = sessionStorage.getItem("user");
+  const userId = JSON.parse(user).id;
 
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState<string | undefined>();
@@ -52,11 +55,31 @@ const CommunityPostWrite = () => {
     navigate("/community");
   };
 
+  const validateTitleContent = () => {
+    if (title === "") {
+      alert("제목을 입력해주세요");
+      return false;
+    }
+    if (
+      content === undefined ||
+      content === "" ||
+      content === null ||
+      content === " "
+    ) {
+      alert("내용을 입력해주세요");
+      return false;
+    }
+    return true;
+  };
+
   // 글쓰기
   const handlePostButtonClick = async (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
+    if (!validateTitleContent()) {
+      return;
+    }
 
     const bookmark_id = postBookmarks.map((bookmark) => bookmark.id);
 
@@ -69,9 +92,11 @@ const CommunityPostWrite = () => {
         const body = {
           title,
           content,
+          bookmark_id,
         };
         const res = await Api.put(`posts/${postId}`, body);
         console.log(res);
+        navigate(`/community/${res.data.id}`);
       } else {
         const body = {
           title,
@@ -91,8 +116,11 @@ const CommunityPostWrite = () => {
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
+    if (!validateTitleContent()) {
+      return;
+    }
 
-    const bookmark_id = postBookmarks.map((bookmark) => bookmark.id);
+    const bookmark_id = postBookmarks?.map((bookmark) => bookmark.id);
 
     console.log(
       `title:${title}, content:${content}, bookmark_id:${bookmark_id}`,
@@ -105,7 +133,7 @@ const CommunityPostWrite = () => {
         bookmark_id,
       };
       const res = await Api.put(`posts/${postId}`, body);
-      console.log(res);
+      navigate(`/community/${res.data.id}`);
     } catch (err) {
       console.error(err);
     }
@@ -116,6 +144,11 @@ const CommunityPostWrite = () => {
       const res = await Api.get(`posts/${postId}`);
       console.log(res);
       const fetchedItem = res.data.postInfo;
+
+      if (userId !== fetchedItem.author) {
+        alert("권한이 없습니다.");
+        navigate("/community");
+      }
 
       setTitle(fetchedItem?.title);
       setContent(fetchedItem?.content);
@@ -131,8 +164,10 @@ const CommunityPostWrite = () => {
           };
         }),
       );
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      const err = error as AxiosError;
+      alert(`${err.response?.data}`);
+      navigate("/community");
     }
   };
 
@@ -159,7 +194,6 @@ const CommunityPostWrite = () => {
       setIsModifying(true);
       fetchPostContent();
     }
-    console.log(postId, isModifying);
   }, []);
 
   // 원래 이미지 업로드를 지우고 s3 이미지 업로드 버튼으로 대체하는 함수
