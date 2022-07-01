@@ -1,4 +1,4 @@
-import { Folder, Post } from "../../db";
+import { Folder, Post, Team } from "../../db";
 
 class searchSerivce {
     static async getPostByQuery({ query, pageNumber, content, type }) {
@@ -15,7 +15,11 @@ class searchSerivce {
             offset = 20 * (pageNumber - 1);
         }
         if (query == "views") {
-            const result = Post.searchAllByViews({ offset, content, type });
+            const result = await Post.searchAllByViews({
+                offset,
+                content,
+                type,
+            });
             if (!result) {
                 const errorMessage = "해당 게시글이 없습니다.";
                 return { errorMessage };
@@ -23,14 +27,18 @@ class searchSerivce {
             return result;
         }
         if (query == "likes") {
-            const result = Post.searchAllByLikes({ offset, content, type });
+            const result = await Post.searchAllByLikes({
+                offset,
+                content,
+                type,
+            });
             if (!result) {
                 const errorMessage = "해당 게시글이 없습니다.";
                 return { errorMessage };
             }
             return result;
         }
-        const result = Post.searchAllByQuery({ offset, content, type });
+        const result = await Post.searchAllByQuery({ offset, content, type });
 
         if (!result) {
             const errorMessage = "해당 게시글이 없습니다.";
@@ -48,13 +56,21 @@ class searchSerivce {
         if (pageNumber > 1) {
             offset = 20 * (pageNumber - 1);
         }
-        const result = Folder.searchFolderByTitle({ user_id, offset, content });
-
-        if (!result) {
+        const myFolder = await Folder.searchFolderByTitle({
+            user_id,
+            offset,
+            content,
+        });
+        if (!myFolder) {
             const errorMessage = "해당 게시글이 없습니다.";
             return { errorMessage };
         }
-        return result;
+        const teamFolders = await Team.searchTeamByQuery({
+            user_id,
+            content,
+        });
+        teamFolders.map((v) => delete v.memberships);
+        return { myFolder, teamFolders };
     }
 }
 

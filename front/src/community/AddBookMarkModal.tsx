@@ -104,14 +104,19 @@ const AddBookMarkModal = ({
 
     if (e.key === "Enter") {
       try {
-        await Api.post(`folders/${selectedFolderID}/bookmarks`, {
+        const res = await Api.post("websites", {
           url: newLink,
+        });
+        await Api.post(`bookmarks`, {
+          folder_id: selectedFolderID,
+          website_id: res.data.website.id,
         });
       } catch (e) {
         alert(`err: ${e}`);
       }
 
       fetchFolderBookmarkData(selectedFolderID);
+      setNewLink("");
     }
   };
 
@@ -121,9 +126,17 @@ const AddBookMarkModal = ({
   ) => {
     e.preventDefault();
     const selectedFolderID = folders.find((folder) => folder.title === tab).id;
-    await Api.post(`folders/${selectedFolderID}/bookmarks`, {
-      url: newLink,
-    });
+    try {
+      const res = await Api.post("websites", {
+        url: newLink,
+      });
+      await Api.post(`bookmarks`, {
+        folder_id: selectedFolderID,
+        website_id: res.data.website.id,
+      });
+    } catch (e) {
+      alert(`err: ${e}`);
+    }
 
     fetchFolderBookmarkData(selectedFolderID);
 
@@ -142,7 +155,7 @@ const AddBookMarkModal = ({
       const { data } = await Api.get("user/folders");
       setFolders(data);
     } catch (err) {
-      console.log(err);
+      alert(err);
     }
   };
 
@@ -151,13 +164,16 @@ const AddBookMarkModal = ({
     try {
       const { data } = await Api.get(`folders/${selectedFolderID}/bookmarks`);
       const handledData = data.bookmarks.map((data: any) => {
-        const checkedBookmark = postBookmarks.find(
-          (bookmark) => bookmark.id === data.bookmark_id,
-        );
+        const checkedBookmarkURL = postBookmarks
+          ?.filter((bookmark) => bookmark.checked === true)
+          .map((bookmark) => bookmark.url);
+
         return {
           id: data.bookmark_id,
           url: data.website.url,
-          checked: checkedBookmark ? true : false,
+          checked: checkedBookmarkURL?.includes(data.website.url)
+            ? true
+            : false,
         };
       });
       setSelectedFolderBookmarks(handledData);
@@ -176,11 +192,11 @@ const AddBookMarkModal = ({
     if (bookmarkModifiedID) {
       const checkedBookmark = postBookmarks.find(
         (postBookmark) => postBookmark.id === bookmarkModifiedID,
-      );
+      ); // id 같은게 있는지 확인
       if (checkedBookmark) {
         setPostBookmarks((prev) => {
           return prev.filter((bookmark) => bookmark.id !== bookmarkModifiedID);
-        });
+        }); // 같은게 있으면 지움
         setBookmarkModifiedID(null);
       } else {
         setPostBookmarks((prev) => {
@@ -188,16 +204,11 @@ const AddBookMarkModal = ({
             (bookmark) => bookmark.id === bookmarkModifiedID,
           );
           return [...prev, newBookmark];
-        });
+        }); // 같은게 없으면 추가
         setBookmarkModifiedID(null);
       }
     }
   }, [bookmarkModifiedID, selectedFolderBookmarks, postBookmarks]);
-
-  React.useEffect(() => {
-    console.log(postBookmarks);
-    console.log(selectedFolderBookmarks);
-  }, [postBookmarks, selectedFolderBookmarks]);
 
   React.useEffect(() => {
     if (tab !== "폴더를 선택하세요") {

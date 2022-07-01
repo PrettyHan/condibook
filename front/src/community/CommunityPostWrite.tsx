@@ -83,10 +83,6 @@ const CommunityPostWrite = () => {
 
     const bookmark_id = postBookmarks.map((bookmark) => bookmark.id);
 
-    console.log(
-      `title:${title}, content:${content}, bookmark_id:${bookmark_id}`,
-    );
-
     try {
       if (isModifying) {
         const body = {
@@ -95,7 +91,6 @@ const CommunityPostWrite = () => {
           bookmark_id,
         };
         const res = await Api.put(`posts/${postId}`, body);
-        console.log(res);
         navigate(`/community/${res.data.id}`);
       } else {
         const body = {
@@ -120,17 +115,15 @@ const CommunityPostWrite = () => {
       return;
     }
 
-    const bookmark_id = postBookmarks?.map((bookmark) => bookmark.id);
-
-    console.log(
-      `title:${title}, content:${content}, bookmark_id:${bookmark_id}`,
-    );
+    const bookmark_idArr = postBookmarks
+      ?.map((bookmark) => bookmark.id)
+      .filter((id) => id !== null);
 
     try {
       const body = {
         title,
         content,
-        bookmark_id,
+        bookmark_idArr,
       };
       const res = await Api.put(`posts/${postId}`, body);
       navigate(`/community/${res.data.id}`);
@@ -142,7 +135,6 @@ const CommunityPostWrite = () => {
   const fetchPostContent = async () => {
     try {
       const res = await Api.get(`posts/${postId}`);
-      console.log(res);
       const fetchedItem = res.data.postInfo;
 
       if (userId !== fetchedItem.author) {
@@ -154,11 +146,11 @@ const CommunityPostWrite = () => {
       setContent(fetchedItem?.content);
       editorRef.current?.getInstance().setMarkdown(fetchedItem?.content);
 
-      const bookmarkData: Omit<Bookmark[], "checked"> = res.data.websiteInfo;
+      const bookmarkData: Omit<Bookmark[], "checked"> = res.data.websitesInfo;
       setPostBookmarks(
         bookmarkData?.map((bookmark) => {
           return {
-            id: bookmark.id,
+            id: null,
             url: bookmark.url,
             checked: true,
           };
@@ -213,7 +205,7 @@ const CommunityPostWrite = () => {
           const ReactS3Client = new S3(s3config);
           ReactS3Client.uploadFile(blob, uuidv4())
             .then((data) => callback(data.location, "imageURL"))
-            .catch((err) => console.log(err));
+            .catch((err) => alert(err));
         });
     }
   }, []);
