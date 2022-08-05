@@ -1,3 +1,4 @@
+<프로젝트 기획 Notion 주소>
 https://locrian-corleggy-03e.notion.site/CONDIBOOK-06c3e84280d643e59f4b1c67ae1c277f
 
 
