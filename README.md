@@ -1,8 +1,9 @@
-<프로젝트 기획 Notion 주소>
-https://locrian-corleggy-03e.notion.site/CONDIBOOK-06c3e84280d643e59f4b1c67ae1c277f
+**<프로젝트 기획 Notion 주소>**
+
+- https://locrian-corleggy-03e.notion.site/CONDIBOOK-06c3e84280d643e59f4b1c67ae1c277f
 
 
-*front*
+**front**
 
 패키지 설치
 `yarn` 
@@ -10,7 +11,7 @@ https://locrian-corleggy-03e.notion.site/CONDIBOOK-06c3e84280d643e59f4b1c67ae1c2
 실행
 `yarn start`
 
-*back*
+**back**
 
 패키지 설치
 `yarn` 
